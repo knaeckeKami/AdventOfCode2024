@@ -44,16 +44,15 @@ class Dont extends Expr {
   const Dont();
 }
 
-final doo = pp.string('do()');
-final dont = pp.string('don\'t()');
+final doo = pp.string('do()').map((value) => Do());
+final dont = pp.string('don\'t()').map((value) => Dont());
 final digit = pp.digit().repeat(1, 3).map((value) => int.parse(value.join()));
-final mulExpr = pp.string('mul') & pp.char('(') & digit & pp.char(',') & digit & pp.char(')');
+final mulExpr = (pp.string('mul(') & digit & pp.char(',') & digit & pp.char(')')).map(toMulExpr);
 
-final mulExprParser = mulExpr.map((value) {
-  final a = value[2] as int;
-  final b = value[4] as int;
+MulExpr toMulExpr(List<dynamic> value) {
+  final a = value[1] as int; // 0 is the string 'mul(', 1 is the 1st digit
+  final b = value[3] as int; // 2 is the string ',', 3 is the 2nd digit
   return MulExpr(a, b);
-});
-final doParser = doo.map((value) => Do());
-final dontParser = dont.map((value) => Dont());
-final exprParser = (mulExprParser | doParser | dontParser).cast<Expr>();
+}
+
+final exprParser = (mulExpr | doo | dont).cast<Expr>();
