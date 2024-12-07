@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:collection/collection.dart';
+import 'dart:math';
 
 void main() {
   final file = File('input07.txt');
@@ -11,7 +13,7 @@ void main() {
     final value = int.parse(parts[0]);
 
     final values = parts[1].trim().split(' ').map(int.parse).toList();
-    return Calibration(value, values);
+    return Calibration(value, Uint64List.fromList(values));
   }).toList();
 
   final validTestSum = calibrations.where(canFindValidConfiguratinon).map((e) => e.value).sum;
@@ -22,7 +24,7 @@ void main() {
 class Calibration {
   final int value;
 
-  final List<int> values;
+  final Uint64List values;
 
   const Calibration(this.value, this.values);
 
@@ -61,7 +63,9 @@ class ConcatOperation extends BinaryOperation {
 
   @override
   int eval(int a, int b) {
-    return int.parse('$a$b');
+    final digits = log(b) ~/ ln10 + 1;
+
+    return (a * pow(10, digits) + b).toInt();
   }
 }
 
@@ -74,23 +78,24 @@ List<BinaryOperation> possibleOperations() => const [
 bool canFindValidConfiguratinon(Calibration calibration) {
   final testValue = calibration.value;
 
-  final [acc, ...rest] = calibration.values;
+  final values = calibration.values;
 
-  return _canFindValidConfiguration(testValue, acc, rest);
+  final acc = values.first;
+
+  return _canFindValidConfiguration(testValue, acc, values, 1);
 }
 
-bool _canFindValidConfiguration(int testValue, int acc, List<int> rest) {
-  if (rest.isEmpty) {
+bool _canFindValidConfiguration(int testValue, int acc, Uint64List list, int index) {
+  if (list.length == index) {
     return acc == testValue;
   }
 
   for (final operation in possibleOperations()) {
-    final nextValue = rest.first;
-    final nextRest = rest.skip(1).toList();
+    final nextValue = list[index];
 
     final newAcc = operation.eval(acc, nextValue);
 
-    if (_canFindValidConfiguration(testValue, newAcc, nextRest)) {
+    if (_canFindValidConfiguration(testValue, newAcc, list, index + 1)) {
       return true;
     }
   }
